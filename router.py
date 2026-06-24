@@ -1,13 +1,14 @@
 from fastapi import APIRouter, UploadFile, File
-from service import ParserService as service
+from service import ParserService
 
 router = APIRouter()
 
 @router.get('/')
 async def test():
-    return 'test'
+    return 'tests'
 
 @router.post('/parser')
 async def parser(file: UploadFile = File(...)):
+    service = ParserService()
     content = await file.read()
     return await service.parser(content, file.filename)
