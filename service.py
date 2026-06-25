@@ -3,6 +3,9 @@ import re
 import fitz
 import json
 
+from starlette.responses import JSONResponse
+
+
 class ParserService:
     async def parser(self, content, filename, body, titles):
         try:
@@ -130,19 +133,6 @@ class ParserService:
 
             book_text = re.sub(r'\s{2,}', ' ', book_text).strip()
 
-            await self.take_body(structure, mets, mets_json, book_text)
-
-        with open('book_structure.json', 'w', encoding='utf-8') as json_file:
-            json.dump(structure, json_file, ensure_ascii=False, indent=4)
-
-        return doc.get_toc()
-
-    async def txt2json(self, content):
-        pass
-
-
-    async def take_body(self, structure, mets, mets_json, book_text):
-        try:
             for sublist in mets:
                 for i in range(len(sublist)):
                     sublist[i] = ' '.join(sublist[i].split())
@@ -168,5 +158,7 @@ class ParserService:
                                             if subsection_data['title'] == original_start:
                                                 structure[chapter_number]['sections'][section_number]['subsections'][
                                                     subsection_number]['body'] = body
-        except Exception as e:
-            print(f'error87549873: {e}')
+        return JSONResponse(structure)
+
+    async def txt2json(self, content):
+        pass
