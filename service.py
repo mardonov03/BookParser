@@ -6,21 +6,21 @@ from starlette.responses import JSONResponse
 
 
 class ParserService:
-    async def parser(self, content, filename, body, titles):
+    async def parser(self, content, filename, body, titles, start_page, end_page):
         try:
             if filename.endswith('.pdf'):
                 doc = fitz.open(stream=content, filetype="pdf")
                 if titles:
-                    return await self.pdf2jsonByTitles_numeratic(doc, body, titles)
+                    return await self.pdf2jsonByTitles_numeratic(doc, body, titles, start_page, end_page)
                 else:
-                    return await self.pdf2jsonWithoutTitles_numeratic(doc, body)
+                    return await self.pdf2jsonWithoutTitles_numeratic(doc, body, start_page, end_page)
             elif filename.endswith('.txt'):
                 return await self.txt2json(content)
 
         except Exception as e:
             logging.error(f'error path: router.py, function: parser, log: {e}')
 
-    async def pdf2jsonByTitles_numeratic(self, doc, body, titles):
+    async def pdf2jsonByTitles_numeratic(self, doc, body, titles, start_page, end_page):
         toc = doc.get_toc()
         current_chapter = None
         current_section = None
@@ -161,7 +161,7 @@ class ParserService:
                                                     subsection_number]['body'] = body
         return JSONResponse(structure)
 
-    async def pdf2jsonWithoutTitles_numeratic(self, doc, body):
+    async def pdf2jsonWithoutTitles_numeratic(self, doc, body, start_page, end_page):
         toc = doc.get_toc()
         current_chapter = None
         current_section = None
@@ -176,7 +176,10 @@ class ParserService:
             level, title, page = entry
             title_upper = title.upper().strip()
 
-            if level == 1:
+            starter = ''.join(filter(str.isdigit, title)).replace(' ','')
+            if not starter:
+                continue
+            if level == 1 and starter:
 
                 if not start_met:
                     start_met.append(i)
@@ -206,7 +209,7 @@ class ParserService:
                 current_chapter = chapter_number
                 current_section = None
 
-            elif level == 2:
+            elif level == 2 or level == 3:
                 section_number = title.split()[0]
                 clean_section_title = title[len(section_number):].strip()
 
@@ -262,9 +265,10 @@ class ParserService:
         if body is True:
             book_text = ''
             processed_pages = set()
-
             for i2 in range(start_met[0], len(toc)):
                 level, title, page = toc[i2]
+                # print(f'{i2}: ', toc[i2])
+                # print('processed_pages: ', processed_pages)
                 if page in processed_pages:
                     continue
                 processed_pages.add(page)
