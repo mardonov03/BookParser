@@ -209,6 +209,7 @@ class ParserService:
                 current_chapter = chapter_number
                 current_section = None
 
+
             elif level == 2 or level == 3:
                 section_number = title.split()[0]
                 clean_section_title = title[len(section_number):].strip()
